@@ -18,16 +18,16 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 安装 JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: 安装 Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: 安装 SDK 平台 36
-        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+        run: |
+          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
+            "platforms;android-36" "build-tools;36.0.0" "platform-tools" \
+            2>/dev/null || true
 
       - name: 配置 Gradle 缓存
         uses: gradle/actions/setup-gradle@v4
@@ -35,13 +35,12 @@ jobs:
       - name: 解压项目
         run: |
           set -e
-          test -f lingxi-dia-3.zip || { echo "仓库根目录找不到 lingxi-dia-3.zip"; ls -la; exit 1; }
+          test -f lingxi-dia-3.zip || { echo "找不到 lingxi-dia-3.zip"; ls -la; exit 1; }
           mkdir -p project
           unzip -q lingxi-dia-3.zip -d project
           GRADLEW_PATH=$(find project -maxdepth 3 -name gradlew | head -n 1)
-          test -n "$GRADLEW_PATH" || { echo "压缩包里找不到 gradlew"; find project -maxdepth 3; exit 1; }
+          test -n "$GRADLEW_PATH" || { echo "压缩包里找不到 gradlew"; exit 1; }
           echo "PROJECT_DIR=$(dirname "$GRADLEW_PATH")" >> "$GITHUB_ENV"
-          echo "项目目录: $(dirname "$GRADLEW_PATH")"
 
       - name: 打包 APK（含本机生图）
         id: full
